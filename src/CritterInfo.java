@@ -1,5 +1,10 @@
 /**
  * Encapsulated class to limit information given to critters
+ *
+ * Allows critters to see:
+ *  - the type of their neighbors (wall, empty, other, same)
+ *  - the direction of their neighbors
+ *  - their own direction
  */
 public final class CritterInfo {
 	private final Critter.Neighbor[] neighbors;
@@ -11,11 +16,12 @@ public final class CritterInfo {
 		neighbors = new Critter.Neighbor[4];
 		neighborsDirs = new Critter.Direction[4];
 
+		// Store the surrounding neighbors and their directions
 		Critter c = grid.getGrid()[row][col];
-
 		for (int i = 0; i < 4; i++) {
-			neighbors[i] = null;
 			neighborsDirs[i] = Critter.Direction.NORTH;
+
+			// Get the row/col for north, east, south, and west from the critter
 			int dirRow = row, dirCol = col;
 			switch (i) {
 				case 0 -> dirRow--; case 1 -> dirCol++;
@@ -41,15 +47,12 @@ public final class CritterInfo {
 	public Critter.Neighbor getFront() {
 		return neighbors[direction.ordinal()];
 	}
-
 	public Critter.Neighbor getRight() {
 		return neighbors[(direction.ordinal() + 1) % 4];
 	}
-
 	public Critter.Neighbor getBack() {
 		return neighbors[(direction.ordinal() + 2) % 4];
 	}
-
 	public Critter.Neighbor getLeft() {
 		return neighbors[(direction.ordinal() + 3) % 4];
 	}
@@ -61,15 +64,12 @@ public final class CritterInfo {
 	public Critter.Direction getFrontDirection() {
 		return neighborsDirs[direction.ordinal()];
 	}
-
 	public Critter.Direction getRightDirection() {
 		return neighborsDirs[(direction.ordinal() + 1) % 4];
 	}
-
 	public Critter.Direction getBackDirection() {
 		return neighborsDirs[(direction.ordinal() + 2) % 4];
 	}
-
 	public Critter.Direction getLeftDirection() {
 		return neighborsDirs[(direction.ordinal() + 3) % 4];
 	}

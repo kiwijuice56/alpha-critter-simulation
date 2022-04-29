@@ -3,6 +3,7 @@ import java.util.*;
 public class SimulationGrid {
 	private Critter[][] grid;
 	private Map<Critter, GridStatus> status;
+	private Map<Class<? extends Critter>, Integer> critterCount;
 	private final int width, height;
 
 	public SimulationGrid(int width, int height) {
@@ -10,6 +11,7 @@ public class SimulationGrid {
 		this.height = height;
 		grid = new Critter[height][width];
 		status = new HashMap<>();
+		critterCount = new HashMap<>();
 	}
 
 	/**
@@ -38,6 +40,9 @@ public class SimulationGrid {
 
 			Critter.Action action = c.getMove(new CritterInfo(this, status.get(c).direction, row, col));
 
+			if (action == null)
+				continue;
+
 			switch (action) {
 				case RIGHT -> status.get(c).direction = Critter.Direction.values()[(dir.ordinal() + 1) % 4];
 				case LEFT -> status.get(c).direction = Critter.Direction.values()[(dir.ordinal() + 3) % 4];
@@ -59,10 +64,12 @@ public class SimulationGrid {
 						break;
 					// Replace critter with new instance, and lock the new and old critters form interacting
 					toRemove.add(grid[frontRow][frontCol]);
+					critterCount.put(grid[frontRow][frontCol].getClass(), critterCount.get(grid[frontRow][frontCol].getClass()) - 1);
 
 					grid[frontRow][frontCol] = c.getClass().getDeclaredConstructor().newInstance();
 					toAdd.add(new GridStatus(frontRow, frontCol, Critter.Direction.values()[(int) (Math.random() * 4)]));
 					lock.add(grid[frontRow][frontCol]);
+					critterCount.put(c.getClass(), critterCount.get(c.getClass()) + 1);
 				}
 			}
 		}
@@ -100,12 +107,14 @@ public class SimulationGrid {
 
 		grid = new Critter[height][width];
 		status = new HashMap<>();
+		critterCount = new HashMap<>();
 		for (int row = 0; row < height; row++) {
 			for (int col = 0; col < width; col++) {
 				Class<? extends Critter> species = toAdd.remove(toAdd.size()-1);
 				if (species != null) {
 					grid[row][col] = species.getDeclaredConstructor().newInstance();
 					status.put(grid[row][col], new GridStatus(row, col, Critter.Direction.values()[(int) (Math.random() * 4)]));
+					critterCount.put(grid[row][col].getClass(), critterCount.getOrDefault(grid[row][col].getClass(), 0)+1);
 				}
 			}
 		}
@@ -132,8 +141,15 @@ public class SimulationGrid {
 	public int getHeight() {
 		return height;
 	}
+
+	public Map<Class<? extends Critter>, Integer> getCritterCount() {
+		return critterCount;
+	}
 }
 
+/**
+ * Storage of state for internal usage
+ */
 class GridStatus {
 	public int row, col;
 	public Critter.Direction direction;

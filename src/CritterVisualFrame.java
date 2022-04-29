@@ -2,22 +2,34 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Create window for visual testing
+ * Creates window for visual testing
  */
 public class CritterVisualFrame extends JFrame {
-	private final Timer timer;
-	private static final Color BG_COLOR = new Color(55,55,68);
+	private static final Font CRITTER_FONT = new Font("Monospaced", Font.BOLD, 12);
+	private static final Color BG_COLOR_1 = new Color(55,55,68);
+	private static final Color BG_COLOR_2 = new Color(45,45,58);
 	private static final Color TEXT_COLOR = new Color(200, 203, 207);
+	private static final Color WIN_TEXT_COLOR = new Color(190, 255, 180);
+	private static final Color LOSE_TEXT_COLOR = new Color(120, 120, 120);
 
-	public CritterVisualFrame(SimulationGrid grid) throws IOException {
+	private final Map<Class<? extends Critter>, JLabel> countLabels;
+	private final SimulationGrid grid;
+	private final Timer timer;
+
+	public CritterVisualFrame(SimulationGrid grid) throws Exception {
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setTitle("AlphaCritter Visual Simulation");
 		getContentPane().setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
-		getContentPane().setBackground(BG_COLOR);
+		getContentPane().setBackground(BG_COLOR_1);
+
+		countLabels = new HashMap<>();
+		this.grid = grid;
 
 		timer = new Timer(5, e -> {
 			try {
@@ -29,35 +41,35 @@ public class CritterVisualFrame extends JFrame {
 		});
 		timer.setCoalesce(true);
 
-		JPanel holder = new JPanel();
-		holder.setBackground(Color.BLACK);
-		holder.setLayout(new BoxLayout(holder, BoxLayout.Y_AXIS));
+		JPanel mainPanel = new JPanel();
+		mainPanel.setBackground(Color.BLACK);
+		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 
-		CritterPanel panel = new CritterPanel(grid);
+		JPanel centerPanel = new JPanel();
+		centerPanel.setBackground(BG_COLOR_2);
+		centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.X_AXIS));
 
-		holder.add(panel);
-		holder.add(initializeControlPanel(grid));
+		centerPanel.add(new CritterPanel(grid));
+		centerPanel.add(createCritterCounter(grid));
+
+		mainPanel.add(centerPanel);
+		mainPanel.add(initializeControlPanel(grid));
 
 		getContentPane().add(Box.createVerticalGlue());
-		getContentPane().add(holder);
+		getContentPane().add(mainPanel);
 		getContentPane().add(Box.createVerticalGlue());
-		setMinimumSize(new Dimension(1000, 700));
+
+		setMinimumSize(new Dimension(1100, 700));
 		setVisible(true);
 	}
 
 	public JPanel initializeControlPanel(SimulationGrid grid) throws IOException {
+		// Initialize the step components
+
 		JSlider stepAmount = new JSlider(SwingConstants.HORIZONTAL, 0, 1000, 1);
 		stepAmount.setMajorTickSpacing(250); stepAmount.setMinorTickSpacing(50);
 		stepAmount.setPaintTicks(true); stepAmount.setPaintLabels(true);
-		stepAmount.setBackground(BG_COLOR);
-		stepAmount.setForeground(TEXT_COLOR);
-
-		JSlider speed = new JSlider(SwingConstants.HORIZONTAL, 0, 100, 15);
-		speed.addChangeListener(e -> timer.setDelay((speed.getValue())));
-		speed.setMajorTickSpacing(25); speed.setMinorTickSpacing(5);
-		speed.setPaintTicks(true); speed.setPaintLabels(true);
-		speed.setBackground(BG_COLOR);
-		speed.setForeground(TEXT_COLOR);
+		darkenJComponent(stepAmount);
 
 		JButton stepButton = new DarkJButton("step");
 		stepButton.addActionListener(e -> {
@@ -68,25 +80,40 @@ public class CritterVisualFrame extends JFrame {
 					ex.printStackTrace();
 				}
 			}
+
 			repaint();
 		});
+
+		JPanel stepAmountSliderHolder = new JPanel();
+		stepAmountSliderHolder.setLayout(new BoxLayout(stepAmountSliderHolder, BoxLayout.X_AXIS));
+		darkenJComponent(stepAmountSliderHolder);
+
+		JLabel stepSizeLabel = new JLabel("Step size");
+		darkenJComponent(stepSizeLabel);
+
+		stepAmountSliderHolder.add(stepSizeLabel);
+		stepAmountSliderHolder.add(stepAmount);
+
+		// Initialize the speed components
+
+		JSlider speed = new JSlider(SwingConstants.HORIZONTAL, 0, 100, 15);
+		speed.addChangeListener(e -> timer.setDelay(speed.getValue()));
+		speed.setMajorTickSpacing(25); speed.setMinorTickSpacing(5);
+		speed.setPaintTicks(true); speed.setPaintLabels(true);
+		darkenJComponent(speed);
 
 		JPanel speedSliderHolder = new JPanel();
 		speedSliderHolder.setBorder(new EmptyBorder(0,0,0,25));
 		speedSliderHolder.setLayout(new BoxLayout(speedSliderHolder, BoxLayout.X_AXIS));
+		darkenJComponent(speedSliderHolder);
+
 		JLabel frameDelayLabel = new JLabel("Frame Delay (ms)");
-		frameDelayLabel.setForeground(TEXT_COLOR);
+		darkenJComponent(frameDelayLabel);
+
 		speedSliderHolder.add(frameDelayLabel);
 		speedSliderHolder.add(speed);
-		speedSliderHolder.setBackground(BG_COLOR);
 
-		JPanel stepAmountSliderHolder = new JPanel();
-		stepAmountSliderHolder.setLayout(new BoxLayout(stepAmountSliderHolder, BoxLayout.X_AXIS));
-		JLabel stepSizeLabel = new JLabel("Step size");
-		stepSizeLabel.setForeground(TEXT_COLOR);
-		stepAmountSliderHolder.add(stepSizeLabel);
-		stepAmountSliderHolder.add(stepAmount);
-		stepAmountSliderHolder.setBackground(BG_COLOR);
+		// Initialize play button
 
 		JButton playButton = new DarkJButton("");
 		ImageIcon playIcon = new ImageIcon(ImageIO.read(new File("resources/play.png")));
@@ -103,30 +130,92 @@ public class CritterVisualFrame extends JFrame {
 			}
 		});
 
+		// Combine all prepared elements
+
 		JPanel sliderHolder = new JPanel();
 		sliderHolder.setBorder(new EmptyBorder(0,0,10,0));
 		sliderHolder.setLayout(new BoxLayout(sliderHolder, BoxLayout.X_AXIS));
 		sliderHolder.add(speedSliderHolder);
 		sliderHolder.add(stepAmountSliderHolder);
-		sliderHolder.setBackground(BG_COLOR);
+		darkenJComponent(sliderHolder);
 
 		JPanel buttonHolder = new JPanel();
 		buttonHolder.setLayout(new BoxLayout(buttonHolder, BoxLayout.X_AXIS));
 		buttonHolder.add(playButton);
 		buttonHolder.add(stepButton);
-		buttonHolder.setBackground(BG_COLOR);
+		darkenJComponent(buttonHolder);
 
 		JPanel controlHolder = new JPanel();
 		controlHolder.setLayout(new BoxLayout(controlHolder, BoxLayout.Y_AXIS));
 		controlHolder.add(sliderHolder);
 		controlHolder.add(buttonHolder);
 		controlHolder.setBorder(new EmptyBorder(5,10,5,10));
-		controlHolder.setBackground(BG_COLOR);
+		darkenJComponent(controlHolder);
 
 		return controlHolder;
 	}
+
+	public JPanel createCritterCounter(SimulationGrid grid) throws Exception {
+		JPanel holder = new JPanel();
+		holder.setBorder(new EmptyBorder(10, 10, 10, 10));
+		holder.setLayout(new BoxLayout(holder, BoxLayout.Y_AXIS));
+		holder.setBackground(BG_COLOR_2);
+
+		for (Class<? extends Critter> species : grid.getCritterCount().keySet()) {
+			JPanel critterHolder = new JPanel();
+			critterHolder.setLayout(new FlowLayout(FlowLayout.LEFT));
+			critterHolder.setBackground(BG_COLOR_2);
+			critterHolder.setMaximumSize(new Dimension(164, 32));
+
+			JLabel nameLabel = new JLabel(species.getName().substring(0, Math.min(species.getName().length(), 16)));
+			nameLabel.setBackground(BG_COLOR_2);
+			nameLabel.setForeground(TEXT_COLOR);
+
+			JLabel countLabel = new JLabel(String.format("%04d", grid.getCritterCount().get(species)));
+			countLabel.setFont(CRITTER_FONT);
+			countLabel.setBackground(BG_COLOR_2);
+			countLabel.setForeground(TEXT_COLOR);
+			countLabels.put(species, countLabel);
+
+			Critter ref = species.getDeclaredConstructor().newInstance();
+			JLabel iconLabel = new JLabel(ref.toString().substring(0, Math.min(ref.toString().length(), 1)));
+			iconLabel.setFont(CRITTER_FONT);
+			iconLabel.setBackground(BG_COLOR_2);
+			iconLabel.setForeground(ref.getColor());
+
+			critterHolder.add(countLabel);
+			critterHolder.add(iconLabel);
+			critterHolder.add(nameLabel);
+			holder.add(critterHolder);
+		}
+		return holder;
+	}
+
+	public static void darkenJComponent(JComponent j) {
+		j.setBackground(BG_COLOR_1);
+		j.setForeground(TEXT_COLOR);
+	}
+
+	// Override repaint to update count labels as the game progresses
+	@Override
+	public void repaint(long time, int x, int y, int width, int height) {
+		super.repaint(time, x, y, width, height);
+		int maxCount = Collections.max(grid.getCritterCount().values());
+		for (Class<? extends Critter> species : countLabels.keySet()) {
+			countLabels.get(species).setText(String.format("%04d", grid.getCritterCount().get(species)));
+			if (grid.getCritterCount().get(species) == 0)
+				countLabels.get(species).setForeground(LOSE_TEXT_COLOR);
+			else if (grid.getCritterCount().get(species) == maxCount)
+				countLabels.get(species).setForeground(WIN_TEXT_COLOR);
+			else
+				countLabels.get(species).setForeground(TEXT_COLOR);
+		}
+	}
 }
 
+/**
+ * Custom JButton with darker color scheme
+ */
 class DarkJButton extends JButton {
 	private static final Color BG_COLOR = new Color(60,60,72);
 	private static final Color HOV_COLOR = new Color(70,70,80);
