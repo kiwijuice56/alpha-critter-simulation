@@ -25,6 +25,7 @@ public class CritterVisualFrame extends JFrame {
 	public CritterVisualFrame(SimulationGrid grid) throws Exception {
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setTitle("AlphaCritter Visual Simulation");
+		setIconImage(ImageIO.read(new File("resources/icon.png")));
 		getContentPane().setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		getContentPane().setBackground(BG_COLOR_1);
 
