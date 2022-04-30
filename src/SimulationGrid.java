@@ -34,11 +34,12 @@ public class SimulationGrid {
 			int row = status.get(c).row, col = status.get(c).col;
 			int frontRow = row, frontCol = col;
 			switch (dir) {
-				case NORTH -> frontRow--; case EAST -> frontCol++;
-				case SOUTH -> frontRow++; case WEST -> frontCol--;
+				case NORTH -> --frontRow; case EAST -> ++frontCol;
+				case SOUTH -> ++frontRow; case WEST -> --frontCol;
 			}
 
-			Critter.Action action = c.getMove(new CritterInfo(this, status.get(c).direction, row, col));
+			status.get(c).info.updateInfo(this, status.get(c).direction, row, col);
+			Critter.Action action = c.getMove(status.get(c).info);
 
 			if (action == null)
 				continue;
@@ -153,10 +154,12 @@ public class SimulationGrid {
 class GridStatus {
 	public int row, col;
 	public Critter.Direction direction;
+	public CritterInfo info;
 
 	public GridStatus(int row, int col, Critter.Direction direction) {
 		this.row = row;
 		this.col = col;
 		this.direction = direction;
+		info = new CritterInfo();
 	}
 }

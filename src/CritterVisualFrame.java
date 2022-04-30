@@ -13,10 +13,10 @@ import java.util.Map;
 public class CritterVisualFrame extends JFrame {
 	private static final Font CRITTER_FONT = new Font("Monospaced", Font.BOLD, 12);
 	private static final Color BG_COLOR_1 = new Color(55,55,68);
-	private static final Color BG_COLOR_2 = new Color(45,45,58);
+	private static final Color BG_COLOR_2 = new Color(42,42,52);
 	private static final Color TEXT_COLOR = new Color(200, 203, 207);
 	private static final Color WIN_TEXT_COLOR = new Color(190, 255, 180);
-	private static final Color LOSE_TEXT_COLOR = new Color(120, 120, 120);
+	private static final Color LOSE_TEXT_COLOR = new Color(100, 100, 120);
 
 	private final Map<Class<? extends Critter>, JLabel> countLabels;
 	private final SimulationGrid grid;
@@ -49,11 +49,12 @@ public class CritterVisualFrame extends JFrame {
 		centerPanel.setBackground(BG_COLOR_2);
 		centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.X_AXIS));
 
-		centerPanel.add(new CritterPanel(grid));
+		CritterPanel critterPanel = new CritterPanel(grid);
+		centerPanel.add(critterPanel);
 		centerPanel.add(createCritterCounter(grid));
 
 		mainPanel.add(centerPanel);
-		mainPanel.add(initializeControlPanel(grid));
+		mainPanel.add(initializeControlPanel(grid, critterPanel));
 
 		getContentPane().add(Box.createVerticalGlue());
 		getContentPane().add(mainPanel);
@@ -63,7 +64,7 @@ public class CritterVisualFrame extends JFrame {
 		setVisible(true);
 	}
 
-	public JPanel initializeControlPanel(SimulationGrid grid) throws IOException {
+	public JPanel initializeControlPanel(SimulationGrid grid, CritterPanel critterPanel) throws IOException {
 		// Initialize the step components
 
 		JSlider stepAmount = new JSlider(SwingConstants.HORIZONTAL, 0, 1000, 1);
@@ -122,18 +123,36 @@ public class CritterVisualFrame extends JFrame {
 
 		playButton.addActionListener(e -> {
 			if (!timer.isRunning()) {
-				playButton.setIcon(pauseIcon);
 				timer.start();
+				playButton.setIcon(pauseIcon);
 			} else {
 				timer.stop();
 				playButton.setIcon(playIcon);
 			}
 		});
 
+		// Initialize debug button
+
+		JButton debugButton = new DarkJButton("");
+		ImageIcon debugOnIcon = new ImageIcon(ImageIO.read(new File("resources/debug_on.png")));
+		ImageIcon debugOffIcon = new ImageIcon(ImageIO.read(new File("resources/debug_off.png")));
+		debugButton.setIcon(debugOffIcon);
+
+		debugButton.addActionListener(e -> {
+			if (critterPanel.isDebugMode()) {
+				debugButton.setIcon(debugOffIcon);
+				critterPanel.setDebugMode(false);
+			} else {
+				debugButton.setIcon(debugOnIcon);
+				critterPanel.setDebugMode(true);
+			}
+			critterPanel.repaint();
+		});
+
 		// Combine all prepared elements
 
 		JPanel sliderHolder = new JPanel();
-		sliderHolder.setBorder(new EmptyBorder(0,0,10,0));
+		sliderHolder.setBorder(new EmptyBorder(10,0,0,0));
 		sliderHolder.setLayout(new BoxLayout(sliderHolder, BoxLayout.X_AXIS));
 		sliderHolder.add(speedSliderHolder);
 		sliderHolder.add(stepAmountSliderHolder);
@@ -142,13 +161,14 @@ public class CritterVisualFrame extends JFrame {
 		JPanel buttonHolder = new JPanel();
 		buttonHolder.setLayout(new BoxLayout(buttonHolder, BoxLayout.X_AXIS));
 		buttonHolder.add(playButton);
+		buttonHolder.add(debugButton);
 		buttonHolder.add(stepButton);
 		darkenJComponent(buttonHolder);
 
 		JPanel controlHolder = new JPanel();
 		controlHolder.setLayout(new BoxLayout(controlHolder, BoxLayout.Y_AXIS));
-		controlHolder.add(sliderHolder);
 		controlHolder.add(buttonHolder);
+		controlHolder.add(sliderHolder);
 		controlHolder.setBorder(new EmptyBorder(5,10,5,10));
 		darkenJComponent(controlHolder);
 
@@ -217,8 +237,8 @@ public class CritterVisualFrame extends JFrame {
  * Custom JButton with darker color scheme
  */
 class DarkJButton extends JButton {
-	private static final Color BG_COLOR = new Color(60,60,72);
-	private static final Color HOV_COLOR = new Color(70,70,80);
+	private static final Color BG_COLOR = new Color(68,68,81);
+	private static final Color HOV_COLOR = new Color(75,75,86);
 	private static final Color PRESS_COLOR = new Color(95,95,115);
 
 	public DarkJButton(String text) {
@@ -226,7 +246,7 @@ class DarkJButton extends JButton {
 		setForeground(new Color(200, 203, 207));
 		setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createLineBorder(new Color(40,40,55)),
-				BorderFactory.createEmptyBorder(6,12,6,12)));
+				BorderFactory.createEmptyBorder(6,32,6,32)));
 		setContentAreaFilled(false); setFocusPainted(false);
 	}
 

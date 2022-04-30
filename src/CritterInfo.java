@@ -9,12 +9,15 @@
 public final class CritterInfo {
 	private final Critter.Neighbor[] neighbors;
 	private final Critter.Direction[] neighborsDirs;
-	private final Critter.Direction direction;
+	private Critter.Direction direction;
 
-	public CritterInfo(SimulationGrid grid, Critter.Direction direction, int row, int col) {
-		this.direction = direction;
+	public CritterInfo() {
 		neighbors = new Critter.Neighbor[4];
 		neighborsDirs = new Critter.Direction[4];
+	}
+
+	public void updateInfo(SimulationGrid grid, Critter.Direction dir, int row, int col) {
+		this.direction = dir;
 
 		// Store the surrounding neighbors and their directions
 		Critter c = grid.getGrid()[row][col];
@@ -24,8 +27,8 @@ public final class CritterInfo {
 			// Get the row/col for north, east, south, and west from the critter
 			int dirRow = row, dirCol = col;
 			switch (i) {
-				case 0 -> dirRow--; case 1 -> dirCol++;
-				case 2 -> dirRow++; case 3 -> dirCol--;
+				case 0 -> --dirRow; case 1 -> ++dirCol;
+				case 2 -> ++dirRow; case 3 -> --dirCol;
 			}
 
 			if (!grid.inBounds(dirRow, dirCol))
